@@ -12,20 +12,31 @@ def solve():
     def get_matches(x, y):
         max_matches = 0
         max_matches_diff = None
+        matched = False
         for beacon_x in x:
-            for beacon_y in y:
-                diff = tuple(beacon_y[i] - beacon_x[i] for i in range(len(x[0])))
-                matches = 0
-                for other_beacon_y in y:
-                    if tuple(other_beacon_y[i] - diff[i] for i in range(len(x[0]))) in x:
-                        matches += 1
-                if matches > max_matches:
-                    max_matches = matches
-                    max_matches_diff = diff
+            if not matched:
+                for beacon_y in y:
+                    if not matched:
+                        diff = tuple(beacon_y[i] - beacon_x[i] for i in range(len(x[0])))
+                        matches = 0
+                        for other_beacon_y in y:
+                            other_diff = tuple(other_beacon_y[i] - diff[i] for i in range(len(x[0])))
+                            if other_diff in x:
+                                matches += 1
+                        if matches > max_matches:
+                            max_matches = matches
+                            max_matches_diff = diff
+                            if matches >= 12:
+                                matched = True
+
         return max_matches, max_matches_diff
 
     orders = list(itertools.permutations((0, 1, 2)))
     signs = list(itertools.product((1, -1), repeat=3))
+    even_orders = [(0, 1, 2), (1, 2, 0), (2, 0, 1)]
+    even_signs = [(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)]
+    odd_orders = [(0, 2, 1), (1, 0, 2), (2, 1, 0)]
+    odd_signs = [(1, 1, -1), (1, -1, 1), (-1, 1, 1), (-1, -1, -1)]
 
     scanners = data.copy()
     scanners_aligned = [scanners[0]]
@@ -35,22 +46,26 @@ def solve():
     diffs = []
     while len(scanners_aligned) < len(scanners):
         for aligned in [scanner for scanner in scanners_aligned if not checked[scanners_aligned.index(scanner)]]:
-            print(f" aligned:{len(scanners_aligned):>3}/{len(scanners):<3}[{','.join([str(scanners.index(scanner)) for scanner in added])}]")
+            # print(f" aligned:{len(scanners_aligned):>3}/{len(scanners):<3}[{','.join([str(scanners.index(scanner)) for scanner in added])}]")
             for scanner in scanners:
                 if scanner not in added:
-                    print(f"checking:{scanners.index(scanner):>3} vs {scanners.index(added[scanners_aligned.index(aligned)])}")
+                    # print(f"checking:{scanners.index(scanner):>3} vs {scanners.index(added[scanners_aligned.index(aligned)])}")
+                    matched = False
                     for order in orders:
                         for sign in signs:
-                            transformed = transform(scanner, order, sign)
-                            matches, diff = get_matches(aligned, transformed)
-                            if matches >= 12:
-                                scanner_aligned = [tuple(beacon[i] - diff[i] for i in range(len(diff))) for beacon in transformed]
-                                scanners_aligned.append(scanner_aligned)
-                                diffs.append(diff)
-                                for beacon in scanner_aligned:
-                                    if beacon not in beacons:
-                                        beacons.append(beacon)
-                                added.append(scanner)
+                            if order in even_orders and sign in even_signs or order in odd_orders and sign in odd_signs:
+                                if not matched:
+                                    transformed = transform(scanner, order, sign)
+                                    matches, diff = get_matches(aligned, transformed)
+                                    if matches >= 12:
+                                        scanner_aligned = [tuple(beacon[i] - diff[i] for i in range(len(diff))) for beacon in transformed]
+                                        scanners_aligned.append(scanner_aligned)
+                                        diffs.append(diff)
+                                        for beacon in scanner_aligned:
+                                            if beacon not in beacons:
+                                                beacons.append(beacon)
+                                        added.append(scanner)
+                                        matched = True
             checked[scanners_aligned.index(aligned)] = True
 
     print(len(beacons))
