@@ -1,5 +1,10 @@
 data = [list(item) for item in open("data/25.data").read().split("\n")]
 
+import glob
+import numpy as np
+from PIL import Image
+import os
+
 def solve():
     def move(seafloor, side):
         row_size = len(seafloor)
@@ -23,6 +28,25 @@ def solve():
             seafloor[(cucumber[0] + row_add) % row_size][(cucumber[1] + col_add) % col_size] = cucumber_type
         return seafloor, len(cucumbers) != 0
 
+    def image(seafloor, step):
+        colors = {
+            ">": [0, 128, 128],
+            "v": [128, 0, 128],
+            ".": [256, 256, 256]
+        }
+        row_size = len(seafloor)
+        col_size = len(seafloor[0])
+        image = []
+        for row in range(row_size):
+            new_row = []
+            for col in range(col_size):
+                new_row.append(colors[seafloor[row][col]])
+            image.append(new_row)
+        if not os.path.exists("25"):
+            os.makedirs("25")
+        Image.fromarray(np.array(image, dtype=np.uint8), "RGB").save(f"25/{str(step).zfill(3)}.png")
+
+
     seafloor = data.copy()
     step = 0
     moved_east = True
@@ -31,8 +55,14 @@ def solve():
         step += 1
         seafloor, moved_east = move(seafloor, "east")
         seafloor, moved_south = move(seafloor, "south")
+        image(seafloor, step)
     
     print(step)
+
+    fp_in = "25/*.png"
+    fp_out = "25.gif"
+    image, *images = [Image.open(f) for f in sorted(glob.glob(fp_in))]
+    image.save(fp=fp_out, format="GIF", append_images=images, save_all=True, duration=100, loop=1)
 
 
 solve()
