@@ -75,10 +75,8 @@ after_first = sum([sum([1 for col in row if col == "#"]) for row in paper])
 for line in folds[1:]:
     paper = fold(paper, axis=line[0], line=line[1])
 
-after_all = decode(paper)
-
 answer_a = after_first
-answer_b = after_all
+answer_b = decode(paper)
 
 puzzle.answer_a = answer_a
 puzzle.answer_b = answer_b
